@@ -1,6 +1,6 @@
 services:
   gcli2api:
-    image: ghcr.io/mamocode/gemini-cli-proxy:latest
+    image: ghcr.io/mamoworks/gemini-cli-proxy:latest
     container_name: gemini-cli-proxy
     restart: unless-stopped
     network_mode: host
