@@ -1,0 +1,12 @@
+services:
+  gcli2api:
+    image: ghcr.io/mamocode/gemini-cli-proxy:latest
+    container_name: gemini-cli-proxy
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - PASSWORD=pwd
+      - PORT=7861
+      # - GOOGLE_CREDENTIALS=${GOOGLE_CREDENTIALS}  # 可选：从环境变量传入凭证
+    volumes:
+      - ./data/creds:/app/creds

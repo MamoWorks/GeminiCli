@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCLI2API 控制面板</title>
+    <link rel="stylesheet" href="/client/dashboard.css">
+</head>
+
+<body>
+    <div class="container">
+
+        <!-- 登录界面 -->
+        <div id="loginSection" class="login-form">
+            <div class="login-card">
+                <div class="login-header">
+                    <div class="login-icon">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h1 class="login-title">GCLI2API</h1>
+                    <p class="login-subtitle">管理控制面板</p>
+                </div>
+                <div class="login-body">
+                    <div class="input-group">
+                        <label for="loginPassword" class="input-label">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
+                                <path d="M7 11V7C7 4.79086 8.79086 3 11 3H13C15.2091 3 17 4.79086 17 7V11" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                            访问密码
+                        </label>
+                        <input type="password" id="loginPassword" class="login-input" placeholder="请输入访问密码" onkeypress="handlePasswordEnter(event)" />
+                    </div>
+                    <button class="login-btn" onclick="login()">
+                        <span>登录进入</span>
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <div id="loginStatusSection"></div>
+                </div>
+                <div class="login-footer">
+                    <p>Powered by Google Gemini API</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主界面 -->
+        <div id="mainSection" class="hidden">
+            <h1>GCLI2API 管理面板</h1>
+
+            <!-- 标签页 -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('oauth')">OAuth认证</button>
+                <button class="tab" onclick="switchTab('upload')">批量上传</button>
+                <button class="tab" onclick="switchTab('envload')">环境变量</button>
+                <button class="tab" onclick="switchTab('manage')">账号管理</button>
+                <button class="tab" onclick="switchTab('config')">配置管理</button>
+            </div>
+
+            <!-- OAuth认证标签页 -->
+            <div id="oauthTab" class="tab-content active">
+                <!-- API 自动启用说明 -->
+                <div class="status success" style="margin-bottom: 20px;">
+                    <strong>自动化优化：</strong> 系统现在会在认证成功后自动为您的项目启用必需的API服务
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>Gemini Cloud Assist API</strong></li>
+                        <li><strong>Gemini for Google Cloud API</strong></li>
+                    </ul>
+                    <p style="margin: 10px 0; color: #343a40;"><strong>说明：</strong>无需手动启用API，系统会自动处理这些配置步骤，让认证流程更加顺畅。
+                    </p>
+                </div>
+
+                <!-- 折叠式 Project ID 输入框 -->
+                <div class="form-group">
+                    <div style="cursor: pointer; user-select: none; padding: 12px; border: 2px solid #ddd; border-radius: 5px; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center;"
+                        onclick="toggleProjectIdSection()">
+                        <span style="font-weight: bold; color: #555;">高级选项：Google Cloud Project ID
+                            (不用管，直接点击获取链接即可)</span>
+                        <span id="projectIdToggleIcon"
+                            style="font-size: 14px; color: #666;">展开</span>
+                    </div>
+                    <div id="projectIdSection"
+                        style="display: none; margin-top: 15px; padding: 15px; border: 2px solid #ddd; border-top: none; border-radius: 0 0 5px 5px; background: #ffffff;">
+                        <label for="projectId"
+                            style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Google Cloud
+                            Project ID (可选):</label>
+                        <input type="text" id="projectId"
+                            style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; box-sizing: border-box;"
+                            placeholder="留空将尝试自动检测，或手动输入项目ID" />
+                        <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
+                            提示：如果你不懂这是什么，可以留空此字段让系统自动检测项目ID
+                        </small>
+                    </div>
+                </div>
+
+                <!-- 为所有项目获取凭证选项 -->
+                <div class="form-group">
+                    <div style="padding: 15px; border: 2px solid #6c757d; border-radius: 8px; background: #f8f9fa;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <input type="checkbox" id="getAllProjectsCreds" style="transform: scale(1.3);">
+                            <label for="getAllProjectsCreds"
+                                style="font-weight: bold; color: #495057; margin: 0; cursor: pointer;">
+                                为当前账号所有项目获取凭证
+                            </label>
+                        </div>
+                        <div style="margin-top: 10px; color: #495057; font-size: 14px; line-height: 1.5;">
+                            <strong>说明：</strong>勾选此选项后，系统会自动检测当前Google账号下的所有项目，<strong>并发处理</strong>为每个项目生成独立的认证文件。
+                        </div>
+                        <div id="allProjectsNote"
+                            style="margin-top: 8px; padding: 8px; background: #e9ecef; border-radius: 5px; font-size: 13px; color: #343a40; display: none;">
+                            <strong>批量并发认证模式已启用</strong> - 认证完成后将并发为所有可访问的项目生成凭证文件
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn" id="getAuthBtn" onclick="startAuth()">获取认证链接</button>
+
+                <div id="authUrlSection" class="hidden">
+                    <h3>认证链接：</h3>
+                    <div class="auth-url">
+                        <a id="authUrl" href="#" target="_blank">点击此链接进行认证</a>
+                    </div>
+                    <div class="status info">
+                        <strong>重要说明：</strong>
+                        <ol style="margin: 10px 0; padding-left: 20px;">
+                            <li>点击上方认证链接，会在新窗口中打开Google OAuth页面</li>
+                            <li>完成Google账号登录和授权</li>
+                            <li>授权成功后会跳转到localhost:8080显示成功页面</li>
+                            <li>关闭OAuth窗口，返回本页面</li>
+                            <li>点击下方"获取认证文件"按钮完成流程</li>
+                        </ol>
+                    </div>
+
+                    <!-- 快捷回调URL输入选项 -->
+                    <div class="form-group"
+                        style="margin: 20px 0; padding: 15px; border: 2px solid #e8f4fd; border-radius: 8px; background: #f8fcff;">
+                        <div style="cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"
+                            onclick="toggleCallbackUrlSection()">
+                            <span style="font-weight: bold; color: #0066cc;">无法回源？试试快捷方式</span>
+                            <span id="callbackUrlToggleIcon"
+                                style="font-size: 14px; color: #666;">展开</span>
+                        </div>
+                        <div id="callbackUrlSection" style="display: none;">
+                            <div
+                                style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+                                <div style="color: #856404; font-size: 14px; font-weight: bold; margin-bottom: 6px;">
+                                    适用场景：</div>
+                                <ul
+                                    style="color: #856404; font-size: 13px; margin: 0; padding-left: 18px; line-height: 1.5;">
+                                    <li>云服务器、VPS等非本地环境</li>
+                                    <li>防火墙阻止了8080端口访问</li>
+                                    <li>网络环境无法正常回源到localhost</li>
+                                    <li>Docker容器内运行，端口映射问题</li>
+                                </ul>
+                            </div>
+                            <div style="color: #666; font-size: 13px; margin-bottom: 12px; line-height: 1.6;">
+                                <strong style="color: #0066cc;">什么是回调URL？</strong><br>
+                                完成Google OAuth授权后，浏览器地址栏显示的完整URL，通常看起来像这样：<br>
+                                <code
+                                    style="background: #f1f3f4; padding: 2px 6px; border-radius: 3px; font-size: 12px; word-break: break-all;">
+                                    http://localhost:8080/?state=abc123...&code=4/0AVMBsJ...&scope=email%20profile...
+                                </code>
+                            </div>
+                            <div
+                                style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 6px; padding: 10px; margin-bottom: 12px;">
+                                <div style="color: #0066cc; font-size: 13px; font-weight: bold; margin-bottom: 4px;">
+                                    使用步骤：</div>
+                                <ol
+                                    style="color: #0066cc; font-size: 12px; margin: 0; padding-left: 18px; line-height: 1.4;">
+                                    <li>点击上方认证链接，完成Google授权</li>
+                                    <li>授权成功后，复制浏览器地址栏的<strong>完整URL</strong></li>
+                                    <li>粘贴到下方输入框，点击获取凭证即可</li>
+                                </ol>
+                            </div>
+                            <div class="input-group">
+                                <input type="url" id="callbackUrlInput"
+                                    placeholder="粘贴完整的回调URL，例如：http://localhost:8080/?state=xxx&code=xxx&scope=xxx..."
+                                    style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 4px; font-size: 13px;">
+                            </div>
+                            <button class="btn" style="margin-top: 10px; background: #28a745; border-color: #28a745;"
+                                onclick="processCallbackUrl()">
+                                从回调URL获取凭证
+                            </button>
+                        </div>
+                    </div>
+
+                    <button class="btn" id="getCredsBtn" onclick="getCredentials()">获取认证文件</button>
+                </div>
+
+                <div id="credentialsSection" class="hidden">
+                    <h3>认证文件内容：</h3>
+                    <div class="credentials" id="credentialsContent"></div>
+                </div>
+            </div>
+
+            <!-- 批量上传标签页 -->
+            <div id="uploadTab" class="tab-content">
+                <h3>批量上传认证文件</h3>
+                <p>支持上传多个JSON格式的认证文件到服务器</p>
+
+                <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                    <p>点击选择文件或拖拽文件到此区域</p>
+                    <p style="color: #666; font-size: 14px;">支持 .json 和 .zip 格式文件</p>
+                    <p style="color: #888; font-size: 12px;">ZIP文件会自动解压提取其中的JSON凭证</p>
+                </div>
+
+                <input type="file" id="fileInput" multiple accept=".json,.zip" style="display: none;"
+                    onchange="handleFileSelect(event)" />
+
+                <div id="fileListSection" class="hidden">
+                    <h4>选择的文件：</h4>
+                    <div class="file-list" id="fileList"></div>
+                    <button class="btn" onclick="uploadFiles()">上传文件</button>
+                    <button class="btn" style="background-color: #6c757d;" onclick="clearFiles()">清空列表</button>
+                </div>
+
+                <div id="uploadProgressSection" class="hidden">
+                    <div class="upload-progress">
+                        <h4>上传进度：</h4>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                        </div>
+                        <p id="progressText">0%</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 环境变量标签页 -->
+            <div id="envloadTab" class="tab-content">
+                <h3>环境变量凭证导入</h3>
+                <p>从环境变量批量导入认证文件，支持部署自动化场景</p>
+
+                <!-- 环境变量状态信息 -->
+                <div id="envStatusSection">
+                    <div class="loading" id="envStatusLoading">正在检查环境变量状态...</div>
+                    <div id="envStatusContent" class="hidden">
+                        <div class="config-group">
+                            <h4>环境变量状态</h4>
+
+                            <div class="form-group">
+                                <label>可用的环境变量:</label>
+                                <div id="envVarsList" class="cred-content"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>自动加载设置:</label>
+                                <span id="autoLoadStatus" style="font-weight: bold;"></span>
+                                <small class="config-note">
+                                    要启用自动加载，请设置环境变量 AUTO_LOAD_ENV_CREDS=true
+                                </small>
+                            </div>
+
+                            <div class="form-group">
+                                <label>已导入的环境变量文件:</label>
+                                <span id="envFilesCount" style="font-weight: bold;"></span>
+                                <div id="envFilesList" class="config-note"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="manage-actions">
+                    <button class="btn" onclick="checkEnvCredsStatus()">刷新状态</button>
+                    <button class="btn" onclick="loadEnvCredentials()">从环境变量导入</button>
+                    <button class="btn" style="background-color: #6c757d; color: #fff;"
+                        onclick="clearEnvCredentials()">清除环境变量文件</button>
+                </div>
+
+                <!-- 使用说明 -->
+                <div class="config-group">
+                    <h4>使用说明</h4>
+                    <div class="config-info">
+                        <strong>环境变量格式：</strong>
+                        <ul>
+                            <li><code>GCLI_CREDS_1</code>, <code>GCLI_CREDS_2</code>, ... (编号格式)</li>
+                            <li><code>GCLI_CREDS_项目名1</code>, <code>GCLI_CREDS_项目名2</code>, ... (项目名格式)</li>
+                        </ul>
+
+                        <strong>环境变量值：</strong> 完整的认证文件JSON内容
+
+                        <br><br>
+                        <strong>示例：</strong>
+                        <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 11px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word;">export GCLI_CREDS_1='{"client_id":"your-client-id","client_secret":"your-secret","refresh_token":"your-token","token_uri":"https://oauth2.googleapis.com/token","project_id":"your-project"}'
+export GCLI_CREDS_myproject='{"client_id":"...","project_id":"myproject",...}'
+export AUTO_LOAD_ENV_CREDS=true  # 启用程序启动时自动导入</pre>
+
+                        <strong>Docker部署示例：</strong>
+                        <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 11px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word;">docker run -e GCLI_CREDS_1='{"client_id":"..."}' \
+           -e AUTO_LOAD_ENV_CREDS=true \
+           your-image</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 文件管理标签页 -->
+            <div id="manageTab" class="tab-content">
+                <h3>账号管理</h3>
+                <p>管理所有账号凭证，查看状态、使用统计和执行操作</p>
+
+                <!-- 状态统计 -->
+                <div class="stats-container" id="statsContainer">
+                    <div class="stat-item total">
+                        <span class="stat-number" id="statTotal">0</span>
+                        <span class="stat-label">总计</span>
+                    </div>
+                    <div class="stat-item normal">
+                        <span class="stat-number" id="statNormal">0</span>
+                        <span class="stat-label">正常</span>
+                    </div>
+                    <div class="stat-item disabled">
+                        <span class="stat-number" id="statDisabled">0</span>
+                        <span class="stat-label">禁用</span>
+                    </div>
+                </div>
+
+                <div class="manage-actions">
+                    <button class="refresh-btn" onclick="refreshCredsStatus()">刷新状态</button>
+                    <button class="download-all-btn" onclick="downloadAllCreds()">打包下载所有文件</button>
+                </div>
+
+                <!-- 批量操作控件 -->
+                <div class="batch-controls">
+                    <h4>批量操作</h4>
+                    <div class="batch-actions">
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="selectAllCheckbox" class="select-all-checkbox"
+                                onchange="toggleSelectAll()">
+                            <label for="selectAllCheckbox">全选</label>
+                        </div>
+                        <span class="selected-count" id="selectedCount">已选择 0 项</span>
+                        <button class="batch-btn batch-enable" id="batchEnableBtn" onclick="batchAction('enable')"
+                            disabled>批量启用</button>
+                        <button class="batch-btn batch-disable" id="batchDisableBtn" onclick="batchAction('disable')"
+                            disabled>批量禁用</button>
+                        <button class="batch-btn batch-test-availability" id="batchTestAvailabilityBtn" onclick="batchTestAvailability()"
+                            disabled>批量测试可用性</button>
+                        <button class="batch-btn batch-refresh-tokens" id="batchRefreshTokensBtn" onclick="batchRefreshTokens()"
+                            disabled>批量刷新令牌</button>
+                        <button class="batch-btn batch-delete" id="batchDeleteBtn" onclick="batchAction('delete')"
+                            disabled>批量删除</button>
+                        <button class="batch-btn batch-test-alive" onclick="batchTestAlive()">测试全部账号</button>
+                        <button class="batch-btn batch-refresh-all-tokens" onclick="refreshAllTokens()">刷新全部令牌</button>
+                        <button class="batch-btn batch-email" onclick="refreshAllEmails()">刷新所有邮箱</button>
+                    </div>
+                    <div style="margin-top: 12px; display: flex; align-items: center; gap: 10px;">
+                        <label for="testAliveModel" style="font-size: 14px; color: #495057; font-weight: 500;">测活模型：</label>
+                        <select id="testAliveModel" class="filter-select" style="width: 200px;">
+                            <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                            <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                        </select>
+                        <small style="color: #6c757d; font-size: 12px;">选择用于测试账号可用性的模型</small>
+                    </div>
+                </div>
+
+                <!-- 筛选和分页控件 -->
+                <div class="filter-container">
+                    <label for="statusFilter">状态筛选：</label>
+                    <select id="statusFilter" class="filter-select" onchange="applyFilters()">
+                        <option value="all">全部</option>
+                        <option value="normal">正常</option>
+                        <option value="disabled">禁用</option>
+                    </select>
+
+                    <label for="errorCodeFilter">错误码筛选：</label>
+                    <select id="errorCodeFilter" class="filter-select" onchange="applyFilters()">
+                        <option value="all">全部错误码</option>
+                        <option value="no-errors">无错误</option>
+                        <option value="has-errors">有错误</option>
+                        <option value="400">错误码 400</option>
+                        <option value="401">错误码 401</option>
+                        <option value="403">错误码 403</option>
+                        <option value="404">错误码 404</option>
+                        <option value="429">错误码 429</option>
+                        <option value="500">错误码 500</option>
+                    </select>
+
+                    <label for="pageSizeSelect">每页显示：</label>
+                    <select id="pageSizeSelect" class="page-size-select" onchange="changePageSize()">
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+
+                    <div class="error-filter-container" id="errorFilterContainer">
+                        <span>快速筛选错误码：</span>
+                        <div id="errorCodeBadges"></div>
+                    </div>
+                </div>
+
+                <div id="credsListSection">
+                    <div class="loading" id="credsLoading">正在加载凭证文件...</div>
+                    <div id="credsList"></div>
+
+                    <!-- 分页控件 -->
+                    <div class="pagination-container" id="paginationContainer" style="display: none;">
+                        <button class="pagination-btn" id="prevPageBtn" onclick="changePage(-1)">上一页</button>
+                        <div class="pagination-info" id="paginationInfo">第 1 页，共 1 页</div>
+                        <button class="pagination-btn" id="nextPageBtn" onclick="changePage(1)">下一页</button>
+                    </div>
+                </div>
+
+                <!-- 使用统计概览和说明 -->
+                <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e9ecef;">
+                    <h3 style="margin-bottom: 20px;">使用统计概览</h3>
+
+                    <!-- 统计概览 -->
+                    <div class="stats-container" id="usageStatsContainer">
+                        <div class="stat-item total">
+                            <span class="stat-number" id="totalApiCalls">0</span>
+                            <span class="stat-label">总调用数</span>
+                        </div>
+                        <div class="stat-item normal" style="border-left: 4px solid #ff6b35;">
+                            <span class="stat-number" id="geminiProCalls">0</span>
+                            <span class="stat-label">Gemini 2.5 Pro</span>
+                        </div>
+                        <div class="stat-item disabled">
+                            <span class="stat-number" id="totalFiles">0</span>
+                            <span class="stat-label">活跃文件数</span>
+                        </div>
+                    </div>
+
+                    <div class="manage-actions">
+                        <button class="btn" style="background-color: #6c757d; color: #fff;"
+                            onclick="resetAllUsageStats()">重置所有统计</button>
+                    </div>
+
+                    <!-- 使用说明 -->
+                    <div class="config-group">
+                        <h4>使用说明</h4>
+                        <div class="config-info">
+                            <strong>统计范围：</strong>
+                            <ul>
+                                <li><strong>Gemini 2.5 Pro 调用次数：</strong>仅统计 gemini-2.5-pro 及其变体模型的成功调用</li>
+                                <li><strong>所有模型调用次数：</strong>统计所有模型的成功调用总数</li>
+                                <li><strong>每日配额：</strong>默认每日配额 Gemini 2.5 Pro: 100次，所有模型: 1000次</li>
+                                <li><strong>配额重置：</strong>每天 UTC 07:00 自动重置调用计数</li>
+                            </ul>
+
+                            <strong>注意：</strong>
+                            <ul>
+                                <li>只统计返回正常响应的API调用，报错的调用不计入统计</li>
+                                <li>统计数据持久化保存在 creds_state.toml 文件中</li>
+                                <li>支持每个凭证文件独立统计和配额管理</li>
+                                <li>每个账号的详细统计信息显示在对应的账号卡片中</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 隐藏的加载元素 (用于后台更新) -->
+                <div style="display: none;">
+                    <div id="usageLoading"></div>
+                    <div id="usageList"></div>
+                </div>
+            </div>
+
+            <!-- 配置管理标签页 -->
+            <div id="configTab" class="tab-content">
+                <h3>配置管理</h3>
+                <p>管理系统配置参数，修改后立即生效</p>
+
+                <div class="manage-actions">
+                    <button class="refresh-btn" onclick="loadConfig()">刷新配置</button>
+                    <button class="btn" onclick="saveConfig()">保存配置</button>
+                </div>
+
+                <div id="configSection">
+                    <div class="loading" id="configLoading">正在加载配置...</div>
+                    <div id="configForm" class="hidden">
+                        <div class="config-group">
+                            <h4>服务器配置</h4>
+
+                            <div class="form-group">
+                                <label for="host">服务器主机地址:</label>
+                                <input type="text" id="host" class="config-input"
+                                    placeholder="例如: 0.0.0.0, 127.0.0.1" />
+                                <small class="config-note">服务器监听的主机地址，0.0.0.0表示监听所有接口</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="port">服务器端口:</label>
+                                <input type="number" id="port" class="config-input" min="1" max="65535"
+                                    placeholder="7861" />
+                                <small class="config-note">服务器监听的端口号，修改后需要重启服务器</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="configApiPassword">API访问密码:</label>
+                                <input type="text" id="configApiPassword" class="config-input" placeholder="pwd" />
+                                <small class="config-note">聊天API访问密码，用于OpenAI和Gemini API端点的认证</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="configPanelPassword">控制面板密码:</label>
+                                <input type="text" id="configPanelPassword" class="config-input" placeholder="pwd" />
+                                <small class="config-note">控制面板访问密码，用于web界面登录认证</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="configPassword">通用密码:</label>
+                                <input type="text" id="configPassword" class="config-input" placeholder="pwd" />
+                                <small class="config-note">（兼容性保留）设置后将覆盖上述两个密码，留空则使用分开的密码设置</small>
+                            </div>
+                        </div>
+
+                        <div class="config-group">
+                            <h4>基础配置</h4>
+
+                            <div class="form-group">
+                                <label for="credentialsDir">凭证目录路径:</label>
+                                <input type="text" id="credentialsDir" class="config-input" />
+                                <small class="config-note">存储认证文件的目录路径</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="proxy">代理设置:</label>
+                                <input type="text" id="proxy" class="config-input"
+                                    placeholder="例如: http://proxy:8080 或 socks5://proxy:1080" />
+                                <small class="config-note">HTTP/HTTPS/SOCKS5Endpoint，留空表示不使用代理</small>
+                            </div>
+                        </div>
+
+                        <div class="config-group">
+                            <h4>端点配置</h4>
+
+                            <!-- 快速配置按钮 -->
+                            <div class="form-group">
+                                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                                    <button type="button" class="btn" onclick="useMirrorUrls()"
+                                        style="background-color: #495057; color: #fff; font-size: 14px;">
+                                        一键使用镜像网址
+                                    </button>
+                                    <button type="button" class="btn" onclick="restoreOfficialUrls()"
+                                        style="background-color: #6c757d; color: #fff; font-size: 14px;">
+                                        还原官方端点
+                                    </button>
+                                </div>
+                                <small class="config-note">镜像网址主要解决墙内无法访问官方端点的问题，部分地区可能无法使用</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="codeAssistEndpoint">Code Assist Endpoint:</label>
+                                <input type="text" id="codeAssistEndpoint" class="config-input" />
+                                <small class="config-note">Google Cloud Code Assist API端点地址</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="oauthProxyUrl">OAuth Endpoint:</label>
+                                <input type="text" id="oauthProxyUrl" class="config-input"
+                                    placeholder="https://oauth2.googleapis.com" />
+                                <small class="config-note">Google OAuth2 API端点地址，用于token获取和刷新</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="googleapisProxyUrl">Google APIs Endpoint:</label>
+                                <input type="text" id="googleapisProxyUrl" class="config-input"
+                                    placeholder="https://www.googleapis.com" />
+                                <small class="config-note">Google APIs API端点地址，用于API服务调用</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="resourceManagerApiUrl">Resource Manager API Endpoint:</label>
+                                <input type="text" id="resourceManagerApiUrl" class="config-input"
+                                    placeholder="https://cloudresourcemanager.googleapis.com" />
+                                <small class="config-note">Google Cloud Resource Manager API端点地址，用于项目管理</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="serviceUsageApiUrl">Service Usage API Endpoint:</label>
+                                <input type="text" id="serviceUsageApiUrl" class="config-input"
+                                    placeholder="https://serviceusage.googleapis.com" />
+                                <small class="config-note">Google Cloud Service Usage API端点地址，用于服务启用管理</small>
+                            </div>
+                        </div>
+
+                        <div class="config-group">
+                            <h4>自动封禁配置</h4>
+
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="autoBanEnabled" class="config-checkbox" />
+                                    启用自动封禁
+                                </label>
+                                <small class="config-note">遇到指定错误码时自动禁用凭证</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="autoBanErrorCodes">自动封禁错误码:</label>
+                                <input type="text" id="autoBanErrorCodes" class="config-input"
+                                    placeholder="例如: 400,403" />
+                                <small class="config-note">用逗号分隔的错误码列表</small>
+                            </div>
+                        </div>
+
+                        <div class="config-group">
+                            <h4>429重试配置</h4>
+
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="retry429Enabled" class="config-checkbox" />
+                                    启用429重试
+                                </label>
+                                <small class="config-note">遇到429错误时自动重试</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="retry429MaxRetries">429重试次数:</label>
+                                <input type="number" id="retry429MaxRetries" class="config-input" min="1" max="50" />
+                                <small class="config-note">遇到429错误时的最大重试次数</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="retry429Interval">429重试间隔(秒):</label>
+                                <input type="number" id="retry429Interval" class="config-input" min="0.01" max="10"
+                                    step="0.01" />
+                                <small class="config-note">遇到429错误时每两次重试间的等待时间</small>
+                            </div>
+                        </div>
+
+
+                        <div class="config-group">
+                            <h4>兼容性配置</h4>
+
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="compatibilityModeEnabled" class="config-checkbox" />
+                                    启用兼容性模式
+                                </label>
+                                <small class="config-note">启用后所有system消息全部转换成user，停用system_instructions <span
+                                        style="color: #495057;">支持热更新</span></small>
+                                <div class="config-info"
+                                    style="background-color: #e9ecef; border: 1px solid transparent; color: #495057;">
+                                    <strong>注意：</strong>该选项可能会降低模型理解能力，但是能避免流式空回的情况。
+                                    <br><strong>适用场景：</strong>当遇到流式传输时模型不返回内容或返回空响应时启用此选项。
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="config-group">
+                            <h4>抗截断配置</h4>
+
+                            <div class="form-group">
+                                <label for="antiTruncationMaxAttempts">抗截断最大重试次数:</label>
+                                <input type="number" id="antiTruncationMaxAttempts" class="config-input" min="1"
+                                    max="10" />
+                                <small class="config-note">当检测到输出截断时的最大续传尝试次数</small>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="config-info">
+                                    <strong>注意：</strong>抗截断功能现在通过模型名控制：
+                                    <ul style="margin: 5px 0; padding-left: 20px;">
+                                        <li>选择带有 "-流式抗截断" 后缀的模型即可启用</li>
+                                        <li>该功能仅在流式传输时生效</li>
+                                        <li>例如: "gemini-2.5-pro-流式抗截断"</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="config-group">
+                            <h4>配置热更新说明</h4>
+
+                            <div class="form-group">
+                                <div class="config-info"
+                                    style="background-color: #e9ecef; border: 1px solid transparent; color: #343a40;">
+                                    <strong>热更新配置（立即生效）：</strong>
+                                    <ul style="margin: 8px 0; padding-left: 20px; color: #495057;">
+                                        <li><strong>网络配置：</strong>代理设置、端点配置、HTTP超时时间、最大连接数</li>
+                                        <li><strong>API配置：</strong>凭证轮换次数、429重试设置、自动封禁配置</li>
+                                        <li><strong>密码配置：</strong>API密码、控制面板密码、通用密码</li>
+                                        <li><strong>功能配置：</strong>抗截断最大重试次数</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="config-info"
+                                    style="background-color: #e9ecef; border: 1px solid transparent; color: #495057;">
+                                    <strong>需要重启的配置：</strong>
+                                    <ul style="margin: 8px 0; padding-left: 20px; color: #495057;">
+                                        <li><strong>服务器配置：</strong>主机地址、端口号</li>
+                                        <li><strong>目录配置：</strong>凭证目录路径、Code Assist端点</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="statusSection"></div>
+        </div>
+    </div>
+
+    <!-- 限制设置弹窗 -->
+    <div id="limitsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">设置使用限制</h3>
+                <button class="modal-close" onclick="closeLimitsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="modalFilename">文件名:</label>
+                    <input type="text" id="modalFilename" class="config-input" readonly />
+                </div>
+                <div class="form-group">
+                    <label for="modalGeminiLimit">Gemini 2.5 Pro 每日限制:</label>
+                    <input type="number" id="modalGeminiLimit" class="config-input" min="1" max="10000" />
+                    <small class="config-note">每日Gemini 2.5 Pro模型调用次数限制</small>
+                </div>
+                <div class="form-group">
+                    <label for="modalTotalLimit">所有模型每日限制:</label>
+                    <input type="number" id="modalTotalLimit" class="config-input" min="1" max="50000" />
+                    <small class="config-note">每日所有模型调用次数总限制</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeLimitsModal()" style="background-color: #6c757d;">取消</button>
+                <button class="btn" onclick="saveLimits()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/client/dashboard.js"></script>
+</body>
+
+</html>
